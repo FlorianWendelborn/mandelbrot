@@ -3,7 +3,11 @@
 ##Description
 Mandelbrot fractal explorer written in Javascript.
 
-##Building Requirements
+##Building
+###Easy
+Install [Node.js](http://node.js) and run the build.bat or build.sh file.
+
+###Advanced
 This application requires [complex](https://github.com/arian/Complex). As complex is an Node.js module you need to install [Node.js](http://nodejs.org). After that install [browserify](https://github.com/substack/node-browserify) and [complex](https://github.com/arian/Complex) with:
 
     npm install browserify -g

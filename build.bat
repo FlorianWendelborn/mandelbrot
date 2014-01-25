@@ -1,0 +1,1 @@
+npm install browserify -g && npm install complex && browserify -r complex > complex.js
