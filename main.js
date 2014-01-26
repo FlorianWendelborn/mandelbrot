@@ -1,6 +1,6 @@
 var canvas, ctx;
 
-var nmin = 0, nmax = 30, xmin = 0, xmax, ymin = 0, ymax, cx=0, cy=0, s=1;
+var nmin = 0, nmax = 40, xmin = 0, xmax, ymin = 0, ymax, cx=0, cy=0, s=1;
 
 var height, width;
 
@@ -15,7 +15,7 @@ window.onload = function () {
 }
 window.onclick = function (e) {
 	s = s*2;
-	nmax = nmax+10;
+	nmax = nmax*1.2;
 	cx = translate(e.x,e.y)[0];
 	cy = translate(e.x,e.y)[1];
 	render();
@@ -58,7 +58,7 @@ for (var i = 0; i < threads; i++) {
 	worker[i].onmessage = function (input) {
 		switch (input.data.type) {
 			case 'result':
-				state[input.data.id] == 'idle';
+				state[input.data.id] = 'idle';
 				var result = input.data.result;
 				for (var i = 0; i < result.length; i++) {
 					ctx.fillStyle = color(result[i].i);
@@ -69,8 +69,12 @@ for (var i = 0; i < threads; i++) {
 					console.timeEnd('render');
 				}
 			break;
+			case 'cancel':
+				state[input.data.id] = 'idle';
+				giveTask(input.data.id);
+			break;
 			default:
-				console.error('invalid message on main');
+				console.error('invalid message on main: ' + JSON.stringify(input.data));
 		}
 	}
 	worker[i].postMessage({
@@ -91,15 +95,6 @@ function render () {
 	tasks = [];
 	ctx.clearRect(0,0,width,height);
 	console.time('render');
-	
-	// canceling renders
-	for (var i = 0; i < threads; i++) {
-		if (state[i] != 'idle') {
-			worker[i].postMessage({
-				type: 'cancel'
-			});
-		}
-	}
 
 	// creating tasks
 	var chunkSize = 100;
@@ -118,7 +113,13 @@ function render () {
 
 	// giving tasks
 	for (var i = 0; i < threads; i++) {
-		giveTask(i);
+		if (state[i] != 'idle') {
+			worker[i].postMessage({
+				type: 'cancel'
+			});
+		} else {
+			giveTask(i);
+		}
 	}
 }
 

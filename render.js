@@ -7,13 +7,8 @@ var width;
 var height;
 var s;
 
-function finishRender (result) {
-	postMessage({
-		type: 'result',
-		id: id,
-		result: result
-	});
-}
+// cancel the render immediately
+var cancel;
 
 onmessage = function (input) {
 	switch (input.data.type) {
@@ -27,17 +22,21 @@ onmessage = function (input) {
 			var xmax = input.data.xmax;
 			var ymin = input.data.ymin;
 			var ymax = input.data.ymax;
-			var iterations = input.data.iterations;
 			var s = input.data.s;
 			var cx = input.data.cx;
 			var cy = input.data.cy;
+			var iterations = input.data.iterations;
+			
 			var result = new Array();
 
 			// rendering some pixels
 			for (var xi = xmin; xi < xmax; xi++) {
 				for (var yi = ymin; yi < ymax; yi++) {
 					var calculated = translate(xi,yi,cx,cy,s,iterations);
-					if (calculated) {
+					if (cancel) {
+						xi = xmax;
+						yi = ymax;
+					} else if (calculated) {
 						result.push({
 							x: xi,
 							y: yi,
@@ -46,14 +45,28 @@ onmessage = function (input) {
 					}
 				}
 			}
-			finishRender(result);
+			
+			// responding
+			if (cancel) {
+				cancel = false;
+				postMessage({
+					type: 'cancel',
+					id: id
+				});
+			} else {
+				postMessage({
+					type: 'result',
+					id: id,
+					result: result
+				});
+			}
 		break;
 		case 'cancel':
-			// todo
+			cancel = true;
+			// todo: fix this
 		break;
 		default:
-			console.error('invalid message on worker ' + id);
-			console.log('Worker ' + id + ' got: ' + JSON.stringify(input.data));
+			console.error('invalid message on worker ' + id + ': ' + JSON.stringify(input.data));
 	}
 }
 
@@ -89,7 +102,6 @@ function iterate (x,y,n) {
 	
 	for (var i = 0; i < n; i++) {
 		c = c.multiply(c).add(e);
-		// c = c.multiply(c).add(e.multiply(new Complex(-1,0)));
 		if (c.abs() > 2) {
 			return i;
 		}
