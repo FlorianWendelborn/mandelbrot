@@ -2,98 +2,140 @@ var canvas, ctx;
 
 var nmin = 0, nmax = 30, xmin = 0, xmax, ymin = 0, ymax, cx=0, cy=0, s=1;
 
-var rendering = false;
-
-var Complex = require('complex');
+var height, width;
 
 window.onload = function () {
 	canvas = document.getElementsByTagName('canvas')[0];
-	xmax = window.innerWidth;
-	ymax = window.innerHeight;
-	canvas.width = xmax;
-	canvas.height = ymax;
+	height = window.innerHeight;
+	width = window.innerWidth;
+	canvas.width = width;
+	canvas.height = height;
 	ctx = canvas.getContext('2d');
-	makeAStep(xmin);
+	render();
 }
 window.onclick = function (e) {
 	s = s*2;
 	nmax = nmax+10;
-	cx = translate(e.x,e.y,true)[0];
-	cy = translate(e.x,e.y,true)[1];
-	ctx.clearRect(xmin,ymin,xmax,ymax);
-	makeAStep(xmin);
+	cx = translate(e.x,e.y)[0];
+	cy = translate(e.x,e.y)[1];
+	render();
 }
 
-function preTranslate () {
-
-}
-
-function translate (x,y,zoom) {
+function translate (x,y) {
 	// scaling
-	var max = ymax<xmax?ymax:xmax;
+	var max = height<width?height:width;
 	
 	// render center
-	var xc = xmax/2;
-	var yc = ymax/2;
+	var xc = width/2;
+	var yc = height/2;
 
 	// result
 	var rx = (x-xc)*4/max/s+cx;
 	var ry = (y-yc)*4/max/s+cy;
-	if (zoom) {
-		return [rx,ry];
-	}
-	if (Math.sqrt(rx*rx+ry*ry)<2) {
-		var ret = iterate(rx,ry,nmax);
-		if (ret === false) {
-			return false;
-		} else {
-			ret = ret+1;
-			return ret;
-		}
-	} else {
-		return false;
-	}
+
+	return [rx,ry];
 }
 
-function color (ni) {
-	var r = Math.floor((Math.sin(ni/15)+1)*127.5),
-		g = Math.floor((Math.cos(ni/15)+1)*127.5),
-		b = Math.floor((Math.sin(Math.cos(ni/15))+1)*127.5);
-
-	return 'rgb('+r+','+g+','+b+')';
+var colors = new Array();
+function color (n) {
+	if (!colors[n]) {
+		var r = Math.floor((Math.sin(n/15)+1)*127.5),
+			g = Math.floor((Math.cos(n/15)+1)*127.5),
+			b = Math.floor((Math.sin(Math.cos(n/15))+1)*127.5);
+		colors[n] = 'rgb('+r+','+g+','+b+')';
+	}
+	return colors[n];
 }
 
-function makeAStep (xi) {
-	// rendering some pixels
-	rendering = true;
-	for (var yi = ymin; yi < ymax; yi++) {
-		var ni = translate(xi,yi);
-		if (ni) {
-			ctx.fillStyle = color(ni);
-			ctx.fillRect(xi,yi,1,1);
+// Web Workers
+var threads = 2;
+var worker = new Array();
+var state = new Array();
+	// idle
+
+for (var i = 0; i < threads; i++) {
+	worker[i] = new Worker('render.js');
+	worker[i].onmessage = function (input) {
+		switch (input.data.type) {
+			case 'result':
+				state[input.data.id] == 'idle';
+				var result = input.data.result;
+				for (var i = 0; i < result.length; i++) {
+					ctx.fillStyle = color(result[i].i);
+					ctx.fillRect(result[i].x,result[i].y,1,1)
+				}
+				giveTask(input.data.id);
+				if (++rendered == totalTasks) {
+					console.timeEnd('render');
+				}
+			break;
+			default:
+				console.error('invalid message on main');
 		}
 	}
-	setTimeout(function () {
-		if (xi < xmax) {
-			makeAStep(xi+1);
-		} else {
-			rendering = false;
-			console.log('finished');
-		}
-	},1);
+	worker[i].postMessage({
+		type: 'init',
+		id: i,
+		height: window.innerHeight,
+		width: window.innerWidth
+	});
+	state[i] = 'idle';
 }
 
-function iterate (x,y,n) {
-	// the real magic is happening here
-	var c = new Complex(x,y),
-		e = c.clone();
+var rendered;
+var tasks;
+var totalTasks;
+function render () {
+	// prepare
+	rendered = 0;
+	tasks = [];
+	ctx.clearRect(0,0,width,height);
+	console.time('render');
 	
-	for (var i = 0; i < n; i++) {
-		c = c.pow(2).add(e);
-		// c = c.pow(2).add(e.multiply(new Complex(-1,0)));
-		if (c.abs() > 2) {
-			return i;
+	// canceling renders
+	for (var i = 0; i < threads; i++) {
+		if (state[i] != 'idle') {
+			worker[i].postMessage({
+				type: 'cancel'
+			});
 		}
 	}
-	return false;
+
+	// creating tasks
+	var chunkSize = 100;
+	for (var x = 0; x <= width/chunkSize; x++) {
+		for (var y = 0; y <= height/chunkSize; y++) {
+			tasks.push({
+				xmin: x*chunkSize,
+				xmax: (x+1)*chunkSize,
+				ymin: y*chunkSize,
+				ymax: (y+1)*chunkSize
+			});
+			// todo: don't render borders
+		}
+	}
+	totalTasks = tasks.length;
+
+	// giving tasks
+	for (var i = 0; i < threads; i++) {
+		giveTask(i);
+	}
+}
+
+function giveTask (id) {
+	if (tasks.length) {
+		var task = tasks.splice(Math.floor(Math.random()*tasks.length),1)[0];
+		state[id] = 'task';
+		worker[id].postMessage({
+			type: 'task',
+			xmin: task.xmin,
+			xmax: task.xmax,
+			ymin: task.ymin,
+			ymax: task.ymax,
+			iterations: nmax,
+			s: s,
+			cx: cx,
+			cy: cy
+		});
+	}
 }
