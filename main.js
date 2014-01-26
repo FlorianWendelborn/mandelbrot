@@ -48,7 +48,7 @@ function color (n) {
 }
 
 // Web Workers
-var threads = 2;
+var threads = 4;
 var worker = new Array();
 var state = new Array();
 	// idle
