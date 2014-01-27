@@ -16,8 +16,8 @@ window.onload = function () {
 window.onclick = function (e) {
 	s = s*2;
 	nmax = nmax*1.2;
-	cx = translate(e.x,e.y)[0];
-	cy = translate(e.x,e.y)[1];
+	cx = translate(e.x||e.pageX,e.y||e.pageY)[0];
+	cy = translate(e.x||e.pageX,e.y||e.pageY)[1];
 	render();
 }
 
