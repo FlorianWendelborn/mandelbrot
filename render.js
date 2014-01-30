@@ -7,8 +7,7 @@ var width;
 var height;
 var s;
 
-// cancel the render immediately
-var cancel;
+var cancel,rendering;
 
 onmessage = function (input) {
 	switch (input.data.type) {
@@ -18,6 +17,7 @@ onmessage = function (input) {
 			height = input.data.height;
 		break;
 		case 'task':
+			rendering = true;
 			var xmin = input.data.xmin;
 			var xmax = input.data.xmax;
 			var ymin = input.data.ymin;
@@ -26,6 +26,7 @@ onmessage = function (input) {
 			var cx = input.data.cx;
 			var cy = input.data.cy;
 			var iterations = input.data.iterations;
+			var jobid = input.data.jobid;
 			
 			var result = new Array();
 
@@ -48,6 +49,7 @@ onmessage = function (input) {
 			
 			// responding
 			if (cancel) {
+				console.log('canceled');
 				cancel = false;
 				postMessage({
 					type: 'cancel',
@@ -55,15 +57,18 @@ onmessage = function (input) {
 				});
 			} else {
 				postMessage({
+					jobid: jobid,
 					type: 'result',
 					id: id,
 					result: result
 				});
 			}
+			rendering = false;
 		break;
 		case 'cancel':
-			cancel = true;
-			// todo: fix this
+			if (rendering) {
+				cancel = true;
+			}
 		break;
 		default:
 			console.error('invalid message on worker ' + id + ': ' + JSON.stringify(input.data));

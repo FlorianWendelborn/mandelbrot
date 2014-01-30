@@ -59,12 +59,15 @@ for (var i = 0; i < threads; i++) {
 		switch (input.data.type) {
 			case 'result':
 				state[input.data.id] = 'idle';
-				var result = input.data.result;
-				for (var i = 0; i < result.length; i++) {
-					ctx.fillStyle = color(result[i].i);
-					ctx.fillRect(result[i].x,result[i].y,1,1)
-				}
 				giveTask(input.data.id);
+				
+				var result = input.data.result;
+				if (input.data.jobid == jobid) {
+					for (var i = 0; i < result.length; i++) {
+						ctx.fillStyle = color(result[i].i);
+						ctx.fillRect(result[i].x,result[i].y,1,1)
+					}
+				}
 				if (++rendered == totalTasks) {
 					console.timeEnd('render');
 				}
@@ -89,8 +92,10 @@ for (var i = 0; i < threads; i++) {
 var rendered;
 var tasks;
 var totalTasks;
+var jobid = -1;
 function render () {
 	// prepare
+	jobid++;
 	rendered = 0;
 	tasks = [];
 	ctx.clearRect(0,0,width,height);
@@ -129,6 +134,7 @@ function giveTask (id) {
 		state[id] = 'task';
 		worker[id].postMessage({
 			type: 'task',
+			jobid: jobid,
 			xmin: task.xmin,
 			xmax: task.xmax,
 			ymin: task.ymin,
