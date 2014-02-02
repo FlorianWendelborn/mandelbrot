@@ -102,12 +102,12 @@ function translate (x,y,cx,cy,s,iterations) {
 
 function iterate (x,y,n) {
 	// the real magic is happening here
-	var c = new Complex(x,y),
-		e = new Complex(x,y);
+	var z = new Complex(x,y),
+		c = new Complex(x,y);
 	
 	for (var i = 0; i < n; i++) {
-		c = c.multiply(c).add(e);
-		if (c.abs() > 2) {
+		z = z.multiply(z).add(c);
+		if (z.abs() > 2) {
 			return i;
 		}
 	}
