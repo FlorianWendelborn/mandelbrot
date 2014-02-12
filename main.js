@@ -1,6 +1,6 @@
 var canvas, ctx;
 
-var nmin = 0, nmax = 40, xmin = 0, xmax, ymin = 0, ymax, cx=0, cy=0, s=1;
+var nmin = 0, nmax = 40, cx=0, cy=0, s=1;
 
 var height, width;
 
@@ -23,6 +23,22 @@ window.onload = function () {
 	canvas.width = width;
 	canvas.height = height;
 	ctx = canvas.getContext('2d');
+	render();
+}
+window.onresize = function () {
+	height = window.innerHeight;
+	width = window.innerWidth;
+	canvas.width = width;
+	canvas.height = height;
+
+	for (var i = 0; i < threads; i++) {
+		worker[i].postMessage({
+			type: 'init',
+			id: i,
+			height: window.innerHeight,
+			width: window.innerWidth
+		});
+	}
 	render();
 }
 window.onclick = function (e) {
