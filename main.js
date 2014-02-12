@@ -5,6 +5,18 @@ var nmin = 0, nmax = 40, xmin = 0, xmax, ymin = 0, ymax, cx=0, cy=0, s=1;
 var height, width;
 
 window.onload = function () {
+	// getting variables from url
+	var hashtag = location.hash.replace('#','').split('&');
+	for (i in hashtag) {
+		var variable = hashtag[i].split('=');
+		switch (variable[0]) {
+			case 'n': nmax = variable[1]*1; break;
+			case 'x': cx   = variable[1]*1; break;
+			case 'y': cy   = variable[1]*1; break;
+			case 'z': s    = variable[1]*1; break;
+		}
+	}
+
 	canvas = document.getElementsByTagName('canvas')[0];
 	height = window.innerHeight;
 	width = window.innerWidth;
@@ -18,6 +30,7 @@ window.onclick = function (e) {
 	nmax = nmax*1.2;
 	cx = translate(-width/2+2*(e.x||e.pageX),-height/2+2*(e.y||e.pageY))[0];
 	cy = translate(-width/2+2*(e.x||e.pageX),-height/2+2*(e.y||e.pageY))[1];
+	location.replace(location.href.split('#')[0] + '#n=' + nmax + '&x=' + cx + '&y=' + cy + '&z=' + s);
 	render();
 }
 
