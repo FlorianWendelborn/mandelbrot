@@ -41,7 +41,8 @@ onmessage = function (input) {
 						result.push({
 							x: xi,
 							y: yi,
-							i: calculated
+							c: calculated[1],
+							i: calculated[0]
 						});
 					}
 				}
@@ -92,7 +93,6 @@ function translate (x,y,cx,cy,s,iterations) {
 		if (ret === false) {
 			return false;
 		} else {
-			ret = ret+1;
 			return ret;
 		}
 	} else {
@@ -108,7 +108,16 @@ function iterate (x,y,n) {
 	for (var i = 0; i < n; i++) {
 		z = z.multiply(z).add(c);
 		if (z.abs() > 2) {
-			return i;
+			z = z.multiply(z).add(c);
+			z = z.multiply(z).add(c);
+			z = z.multiply(z).add(c);
+			z = z.multiply(z).add(c);
+			z = z.multiply(z).add(c);
+			z = z.multiply(z).add(c);
+
+			var mu = i + 1 - Math.log(Math.log(z.abs()))/Math.log(2);
+
+			return [i+1,'hsl('+mu*10+',100%,70%)'];
 		}
 	}
 	return false;

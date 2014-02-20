@@ -42,8 +42,8 @@ window.onresize = function () {
 	render();
 }
 window.onclick = function (e) {
-	s = s*2;
-	nmax = nmax*1.2;
+	s *= e.shiftKey?.5:2;
+	nmax *= e.shiftKey?5/6:1.2;
 	cx = translate(-width/2+2*(e.x||e.pageX),-height/2+2*(e.y||e.pageY))[0];
 	cy = translate(-width/2+2*(e.x||e.pageX),-height/2+2*(e.y||e.pageY))[1];
 	location.replace(location.href.split('#')[0] + '#n=' + nmax + '&x=' + cx + '&y=' + cy + '&z=' + s);
@@ -65,17 +65,6 @@ function translate (x,y) {
 	return [rx,ry];
 }
 
-var colors = new Array();
-function color (n) {
-	if (!colors[n]) {
-		var r = Math.floor((Math.sin(n/15)+1)*127.5),
-			g = Math.floor((Math.cos(n/15)+1)*127.5),
-			b = Math.floor((Math.sin(Math.cos(n/15))+1)*127.5);
-		colors[n] = 'rgb('+r+','+g+','+b+')';
-	}
-	return colors[n];
-}
-
 // Web Workers
 var threads = 4;
 var worker = new Array();
@@ -93,7 +82,7 @@ for (var i = 0; i < threads; i++) {
 				var result = input.data.result;
 				if (input.data.jobid == jobid) {
 					for (var i = 0; i < result.length; i++) {
-						ctx.fillStyle = color(result[i].i);
+						ctx.fillStyle = result[i].c;
 						ctx.fillRect(result[i].x,result[i].y,1,1)
 					}
 				}
