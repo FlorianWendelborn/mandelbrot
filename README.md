@@ -1,18 +1,24 @@
-#mandelbrot.js
+# mandelbrot.js
 
-##Description
+## Description
+
 Mandelbrot fractal explorer written in Javascript.
 
-##Running
+## Running
+
 Because mandelbrot.js uses web workers you have to run this from a http server. If you want a quick and easy http-server try this:
 
-    npm install http-server -g
+```bash
+npm install http-server -g
+```
 
 Then navigate to mandelbrot.js's main directory and run:
 
-    http-server
+```bash
+http-server
+```
 
-##License
+## License
 
 BSD 2-Clause License
 
